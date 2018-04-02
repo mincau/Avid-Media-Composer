@@ -40,4 +40,5 @@ public:
 	afx_msg void OnBnClickedButton3();
 	afx_msg void OnBnClickedButton4();
 	CEdit m_EditOut;
+	CEdit m_EditDuration;
 };

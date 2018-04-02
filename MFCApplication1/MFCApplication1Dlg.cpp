@@ -62,6 +62,7 @@ void CMFCApplication1Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT1, m_EditVideo);
 	DDX_Control(pDX, IDC_EDIT2, m_EditAudio);
 	DDX_Control(pDX, IDC_EDIT3, m_EditOut);
+	DDX_Control(pDX, IDC_EDIT4, m_EditDuration);
 }
 
 BEGIN_MESSAGE_MAP(CMFCApplication1Dlg, CDialogEx)
@@ -214,12 +215,17 @@ void CMFCApplication1Dlg::OnBnClickedButton3()
 void CMFCApplication1Dlg::OnBnClickedButton4()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	CCompileAudioMXF oMyCompileAudio;
+	CCombinationMXF oMyCompileAudio;
 	CString csAudio,csOut;
 	DWORD dwMinSize;
-	
+	CString csDuration;
+	int iDuration = 0;
+
+	m_EditDuration.GetWindowText(csDuration);
 	m_EditAudio.GetWindowText(csAudio);
 	m_EditOut.GetWindowText(csOut);
+
+	iDuration = _ttoi(csDuration);
 
 	dwMinSize = WideCharToMultiByte(CP_ACP, NULL, csAudio, -1, NULL, 0, NULL, FALSE);
 	char * chRead = new char[dwMinSize];
@@ -235,17 +241,32 @@ void CMFCApplication1Dlg::OnBnClickedButton4()
 	delete[] chRead; chRead = nullptr;
 	delete[] chOut; chOut = nullptr;
 
-	oMyCompileAudio.CompileHeader();
+	oMyCompileAudio.CombinationHeader();
 	
 	char *chData = new char[1920];
-	FILE *fpRead = nullptr;
-	fopen_s(&fpRead, "F:\\Avid MediaFiles\\MXF\\A02.5AB88DEB_55AB88DE9.mxf", "rb+");
-	for (int i = 0; i < 10; i++)
+	char *chV = new char[3887104];
+
+	FILE *fpAudio = nullptr;
+	FILE *fpVideo = nullptr;
+
+	fopen_s(&fpAudio, "F:\\Avid MediaFiles\\MXF\\A02.5AB88DEB_55AB88DE9.mxf", "rb+");
+	fopen_s(&fpVideo, "F:\\Avid MediaFiles\\MXF\\V01.5AB88F03_55AB88F03.mxf", "rb+");
+	
+	for (int i = 0; i < iDuration; i++)
 	{
-		_fseeki64(fpRead,266240+i*1920,SEEK_SET);
-		fread_s(chData, 1920, 1, 1920, fpRead);
-		oMyCompileAudio.CompileAudioData(chData, 1920);
+		_fseeki64(fpAudio,266240+i*1920,SEEK_SET);
+		fread_s(chData, 1920, 1, 1920, fpAudio);
+		oMyCompileAudio.CombinationAudioData(chData, 1920);
+		
+		_fseeki64(fpVideo,393216 + i* 3887104,SEEK_SET);
+		fread_s(chV, 3887104, 1, 3887104, fpVideo);
+		oMyCompileAudio.CombinationVideoData(chV, 3887104);
 	}
+	
 	oMyCompileAudio.Flush();
+	
+	fclose(fpAudio);
+	fclose(fpVideo);
+	delete[] chV; chV = nullptr;
 	delete[] chData; chData = nullptr;
 }
